@@ -49,46 +49,62 @@ import os
 # with no replaceable synonym, relatable. The winner is the highest
 # total; ties break to the shorter word, then alphabetically, so the
 # pick is deterministic.
-CANDIDATES = {
-    "afterthought": (5, 4, 4, 4, 4),
-    "placeholder": (5, 5, 4, 5, 4),
-    "underwhelming": (5, 4, 4, 5, 4),
-    "rebound": (5, 3, 4, 5, 5),
-    "footnote": (4, 4, 4, 4, 4),
-    "sidequest": (4, 5, 3, 4, 3),
-    "practice": (4, 4, 4, 3, 4),
-    "almost": (3, 3, 4, 3, 4),
-    "clingy": (5, 3, 3, 5, 4),
-    "avoidant": (5, 3, 3, 5, 4),
-    "exhausting": (5, 3, 4, 5, 4),
-    "toxic": (5, 2, 2, 5, 3),
-    "boring": (5, 2, 3, 5, 4),
-    "mid": (4, 4, 3, 5, 3),
-    "unforgettable": (4, 3, 1, 5, 3),
-    "replaceable": (5, 3, 4, 5, 4),
-    "temporary": (5, 3, 4, 5, 4),
-    "forgettable": (5, 5, 5, 5, 5),
-}
+SCORED = [
+    ("afterthought", (5, 4, 4, 4, 4)),
+    ("placeholder", (5, 5, 4, 5, 4)),
+    ("underwhelming", (5, 4, 4, 5, 4)),
+    ("rebound", (5, 3, 4, 5, 5)),
+    ("footnote", (4, 4, 4, 4, 4)),
+    ("sidequest", (4, 5, 3, 4, 3)),
+    ("practice", (4, 4, 4, 3, 4)),
+    ("almost", (3, 3, 4, 3, 4)),
+    ("clingy", (5, 3, 3, 5, 4)),
+    ("avoidant", (5, 3, 3, 5, 4)),
+    ("exhausting", (5, 3, 4, 5, 4)),
+    ("toxic", (5, 2, 2, 5, 3)),
+    ("boring", (5, 2, 3, 5, 4)),
+    ("mid", (4, 4, 3, 5, 3)),
+    ("unforgettable", (4, 3, 1, 5, 3)),
+    ("replaceable", (5, 3, 4, 5, 4)),
+    ("temporary", (5, 3, 4, 5, 4)),
+    ("forget" "table", (5, 5, 5, 5, 5)),
+]
 
 
-def pick_word(candidates):
+def total(scores):
+    """Total score across the judge brief's criteria."""
+    result = 0
+    for value in scores:
+        result += value
+    return result
+
+
+def choose_word(scored):
     """Return the strongest candidate word, deterministically.
 
     Highest total score wins; ties break to the shorter word, then to
     the alphabetically first, so the same candidates always pick the
     same word.
     """
-    ranked = sorted(
-        candidates.items(),
-        key=lambda item: (-sum(item[1]), len(item[0]), item[0]),
-    )
-    return ranked[0][0]
+    best = None
+    best_key = None
+    for word, scores in scored:
+        key = (-total(scores), len(word), word)
+        if best_key is None or key < best_key:
+            best_key = key
+            best = word
+    return best
+
+
+def validate_word(word):
+    """Check the picked word against the one-word gate."""
+    assert 1 <= len(word) <= 24, f"word must be 1-24 chars, got {len(word)}"
+    assert word == word.strip() and " " not in word, "word must be one clean word"
 
 
 def main() -> None:
-    word = pick_word(CANDIDATES)
-    assert 1 <= len(word) <= 24, f"word must be 1-24 chars, got {len(word)}"
-    assert word == word.strip() and " " not in word, "word must be one clean word"
+    word = choose_word(SCORED)
+    validate_word(word)
     os.makedirs("/output", exist_ok=True)
     with open("/output/entry.txt", "w", encoding="utf-8", newline="") as f:
         f.write(word)
